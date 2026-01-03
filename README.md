@@ -1,11 +1,11 @@
 # MIDIBoy
 
-**A USB-MIDI to Game Boy interface for the RP2040 Zero**
+**A USB-MIDI to Game Boy interface for the Raspberry Pi Pico**
 
-MIDIBoy is a firmware for the RP2040 Zero microcontroller that bridges MIDI controllers and DAWs to the Nintendo Game Boy, enabling you to use the Game Boy's iconic sound chip as a synthesizer.
+MIDIBoy is a firmware for the Raspberry Pi Pico that bridges MIDI controllers and DAWs to the Nintendo Game Boy, enabling you to use the Game Boy's iconic sound chip as a synthesizer.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-RP2040-green.svg)
+![License](https://img.shields.io/badge/license-GPL%20v2-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Pico-green.svg)
 ![Status](https://img.shields.io/badge/status-Stage%201%20Complete-yellow.svg)
 
 ## Features
@@ -27,49 +27,79 @@ MIDIBoy is a firmware for the RP2040 Zero microcontroller that bridges MIDI cont
 ## Hardware
 
 ### Supported Microcontroller
-- **Waveshare RP2040 Zero** (or compatible RP2040 boards)
+- **Raspberry Pi Pico** (or compatible RP2040 boards)
 
-### Pin Assignments (POC v2)
+### Pin Assignments
 
-| Function | GPIO | Description |
-|----------|------|-------------|
-| GB_SI | GP3 | Game Boy Serial In (data to GB) |
-| GB_SC | GP4 | Game Boy Serial Clock |
-| GB_SO | GP5 | Game Boy Serial Out (data from GB) |
-| MIDI_TX | GP8 | MIDI UART TX (optional MIDI OUT) |
-| MIDI_RX | GP9 | MIDI UART RX (DIN MIDI IN) |
-| LED | GP15 | Activity LED |
+| Function | GPIO | Pico Pin | Description |
+|----------|------|----------|-------------|
+| GB_SI | GP2 | Pin 4 | Game Boy Serial In (data to GB) |
+| GB_SC | GP3 | Pin 5 | Game Boy Serial Clock |
+| GB_SO | GP4 | Pin 6 | Game Boy Serial Out (data from GB) |
+| MIDI_TX | GP8 | Pin 11 | MIDI UART TX (optional MIDI OUT) |
+| MIDI_RX | GP9 | Pin 12 | MIDI UART RX (DIN MIDI IN) |
+| LED | GP25 | Onboard | Activity LED (built-in) |
 
 ### Wiring Diagram
 
-```
-                    RP2040 Zero
-                   ┌───────────┐
-              3V3 ─┤1        20├─ 5V
-              GND ─┤2        19├─ GND
-             GP29 ─┤3        18├─ GP28
-             GP28 ─┤4        17├─ GP27
-             GP27 ─┤5        16├─ GP26
-             GP26 ─┤6        15├─ GP15 ──── LED
-             GP15 ─┤7        14├─ GP14
-             GP14 ─┤8        13├─ GP13
-      GB_SO  GP5 ─┤9        12├─ GP12
-      GB_SC  GP4 ─┤10       11├─ GP11
-      GB_SI  GP3 ─┤11       10├─ GP10
-              GP2 ─┤12        9├─ GP9 ───── MIDI RX
-              GP1 ─┤13        8├─ GP8 ───── MIDI TX
-              GP0 ─┤14        7├─ GND
-                   └───────────┘
+**Raspberry Pi Pico Pinout:**
 
-Game Boy Link Port (looking at cable end):
-    ┌─────────┐
-    │ 6  4  2 │     1: VCC (5V)
-    │  5  3  1│     2: SO (Serial Out from GB)
-    └─────────┘     3: SI (Serial In to GB)
-                    4: SD (directly directly directly directly Serial Data, directly directly directly directly directly directly unused)
-                    5: SC (Serial Clock)
-                    6: GND
 ```
+                        ┌──────────────┐
+                        │     USB      │
+                        └──────────────┘
+               ┌────────────────────────────────┐
+         GP0  ─┤ 1                           40 ├─ VBUS
+         GP1  ─┤ 2                           39 ├─ VSYS
+         GND  ─┤ 3                           38 ├─ GND
+  GB_SI  GP2  ─┤ 4  ◄── To GB Link Pin 3     37 ├─ 3V3_EN
+  GB_SC  GP3  ─┤ 5  ◄── To GB Link Pin 5     36 ├─ 3V3
+  GB_SO  GP4  ─┤ 6  ◄── From GB Link Pin 2   35 ├─ ADC_VREF
+         GP5  ─┤ 7                           34 ├─ GP28
+         GND  ─┤ 8                           33 ├─ GND
+         GP6  ─┤ 9                           32 ├─ GP27
+         GP7  ─┤10                           31 ├─ GP26
+MIDI TX  GP8  ─┤11  ◄── To MIDI OUT          30 ├─ RUN
+MIDI RX  GP9  ─┤12  ◄── From MIDI IN         29 ├─ GP22
+         GND  ─┤13                           28 ├─ GND
+        GP10  ─┤14                           27 ├─ GP21
+        GP11  ─┤15                           26 ├─ GP20
+        GP12  ─┤16                           25 ├─ GP19
+        GP13  ─┤17                           24 ├─ GP18
+         GND  ─┤18                           23 ├─ GND
+        GP14  ─┤19                           22 ├─ GP17
+        GP15  ─┤20                           21 ├─ GP16
+               └────────────────────────────────┘
+                                               
+                     Onboard LED = GP25
+```
+
+**Game Boy Link Cable Pinout (looking at cable plug):**
+
+```
+    ┌─────────┐
+    │ 6  4  2 │
+    │  5  3  1│
+    └─────────┘
+    
+    Pin 1: VCC (5V) - Not connected
+    Pin 2: SO (Serial Out from GB) → Pico GP4 (Pin 6)
+    Pin 3: SI (Serial In to GB) ← Pico GP2 (Pin 4)
+    Pin 4: SD (Serial Data) - Not used
+    Pin 5: SC (Serial Clock) ← Pico GP3 (Pin 5)
+    Pin 6: GND → Pico GND (Pin 3 or 8)
+```
+
+**Connection Summary:**
+| Pico GPIO | Pico Pin | GB Link Pin | Function |
+|-----------|----------|-------------|----------|
+| GP2 | Pin 4 | Pin 3 (SI) | Data to Game Boy |
+| GP3 | Pin 5 | Pin 5 (SC) | Serial Clock |
+| GP4 | Pin 6 | Pin 2 (SO) | Data from Game Boy |
+| GND | Pin 3/8 | Pin 6 (GND) | Ground |
+| GP8 | Pin 11 | - | MIDI OUT (optional) |
+| GP9 | Pin 12 | - | MIDI IN |
+| GP25 | Onboard | - | Activity LED (built-in) |
 
 ## Building
 
@@ -231,7 +261,7 @@ Contributions are welcome! Please:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 

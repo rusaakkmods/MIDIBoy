@@ -3,7 +3,7 @@
  * @brief MIDIBoy hardware configuration and pin definitions
  * 
  * This file contains all hardware-specific configuration for the MIDIBoy
- * firmware running on RP2040 Zero. Pin assignments match the POC v2 hardware.
+ * firmware running on Raspberry Pi Pico.
  */
 
 #ifndef MIDIBOY_CONFIG_H
@@ -19,24 +19,28 @@
 #define MIDIBOY_VERSION_PATCH   0
 
 // =============================================================================
-// Game Boy Link Interface Pins (directly from POC v2 BOM)
+// Game Boy Link Interface Pins
 // =============================================================================
-// GB_SO (Serial Out from Game Boy) - directly to GP2 via 10k series resistor
-#define PIN_GB_SO           2
+// Pins grouped together for easy wiring (physical pins 4, 5, 6)
 
-// GB_SI (Serial In to Game Boy) - from GP3 via 100Ω series resistor  
-#define PIN_GB_SI           3
+// GB_SI (Serial In to Game Boy) - output from Pico
+#define PIN_GB_SI           2
 
-// GB_SC (Serial Clock) - directly to GP4 via 10k series resistor
-#define PIN_GB_SC           4
+// GB_SC (Serial Clock) - output from Pico (master mode)
+#define PIN_GB_SC           3
+
+// GB_SO (Serial Out from Game Boy) - input to Pico
+#define PIN_GB_SO           4
 
 // =============================================================================
 // MIDI Interface Pins (UART1)
 // =============================================================================
-// MIDI OUT TX - GP8 via transistor driver circuit
+// Using UART1 alternate pins for cleaner layout
+
+// MIDI OUT TX - GP8 (UART1 TX) via transistor driver circuit
 #define PIN_MIDI_TX         8
 
-// MIDI IN RX - GP9 via 6N137 optocoupler
+// MIDI IN RX - GP9 (UART1 RX) via 6N137 optocoupler  
 #define PIN_MIDI_RX         9
 
 // UART instance for MIDI
@@ -46,10 +50,8 @@
 // =============================================================================
 // LED Indicator
 // =============================================================================
-#define PIN_LED_ACTIVITY    15
-
-// Onboard LED (RP2040 Zero has WS2812 on GPIO16, but we use simple GPIO)
-#define PIN_LED_ONBOARD     25  // Standard Pico LED pin (if available)
+// Use Pico's onboard LED - no external LED needed!
+#define PIN_LED_ACTIVITY    25
 
 // =============================================================================
 // Timing Configuration

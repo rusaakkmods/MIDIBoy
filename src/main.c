@@ -2,21 +2,21 @@
  * @file main.c
  * @brief MIDIBoy firmware entry point
  * 
- * MIDIBoy - RP2040 Zero based Game Boy MIDI interface
+ * MIDIBoy - Raspberry Pi Pico based Game Boy MIDI interface
  * 
  * Architecture:
  * - Core 0: Real-time processing (MIDI parsing, GB link, mode handlers)
- * - Core 1: Housekeeping (LED updates, future USB-MIDI, mode switching)
+ * - Core 1: Housekeeping (LED updates, USB-MIDI stack, mode switching)
  * 
  * Current implementation: Stage 1 - mGB MIDI IN mode
  * 
- * Hardware connections (POC v2):
- * - GP2: GB_SO (Serial Out from GB) - input
- * - GP3: GB_SI (Serial In to GB) - output  
- * - GP4: GB_SC (Serial Clock) - output (master mode)
+ * Hardware connections (Raspberry Pi Pico):
+ * - GP2: GB_SI (Serial In to GB) - output  
+ * - GP3: GB_SC (Serial Clock) - output (master mode)
+ * - GP4: GB_SO (Serial Out from GB) - input
  * - GP8: MIDI TX (UART1) - output
  * - GP9: MIDI RX (UART1) - input
- * - GP15: Activity LED - output
+ * - GP25: Activity LED - onboard
  */
 
 #include "config.h"
