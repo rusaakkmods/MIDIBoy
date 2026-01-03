@@ -1,0 +1,142 @@
+;
+; gb_link_tx.pio - PIO program for Game Boy Link Cable TX
+;
+; This PIO program implements the master-side serial transmission to Game Boy.
+; The Game Boy link protocol uses a synchronous serial interface where:
+; - SC (Serial Clock) is driven by the master (us)
+; - SI (Serial In to GB) carries data from master to slave
+; - SO (Serial Out from GB) carries data from slave to master (not used here)
+;
+; mGB Protocol:
+; - Data is shifted MSB first
+; - Clock idles HIGH
+; - Data is sampled on rising edge of clock
+; - Each byte is 8 bits, no start/stop bits
+;
+; Timing:
+; - Clock period ~122µs (8.2 kHz) matches Game Boy's internal timing
+; - Data setup before rising clock edge
+;
+
+.program gb_link_tx
+
+; Autopull enabled, 8 bits per transfer
+; sideset: SC (clock line)
+; out pin: SI (data to Game Boy)
+
+.side_set 1 opt
+
+.wrap_target
+    ; Wait for data in TX FIFO (blocking pull)
+    pull block              side 1      ; Clock HIGH (idle), get byte from FIFO
+    
+    set x, 7                side 1      ; 8 bits to send
+    
+bitloop:
+    ; Output MSB first, clock LOW (data setup)
+    out pins, 1             side 0  [7] ; Shift out 1 bit, clock LOW, hold for setup
+    
+    ; Clock HIGH (data sampled by GB on this edge)
+    nop                     side 1  [7] ; Clock HIGH, hold for sampling
+    
+    jmp x-- bitloop         side 1      ; Loop for remaining bits
+    
+    ; Inter-byte delay - mGB needs time to process each byte
+    ; Use multiple nop instructions with max delay
+    set x, 15               side 1      ; Clock stays HIGH
+delay_loop:
+    nop                     side 1  [7] ; 8 cycles per iteration x 16 = 128 cycles
+    jmp x-- delay_loop      side 1
+    
+.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+/**
+ * @brief Initialize the GB Link TX PIO program
+ * 
+ * @param pio PIO instance (pio0 or pio1)
+ * @param sm State machine index (0-3)
+ * @param offset Program offset in PIO instruction memory
+ * @param pin_si GPIO pin for SI (data to Game Boy)
+ * @param pin_sc GPIO pin for SC (clock)
+ * @param freq_hz Desired bit clock frequency (typically 8000 Hz)
+ */
+static inline void gb_link_tx_program_init(PIO pio, uint sm, uint offset, 
+                                            uint pin_si, uint pin_sc, float freq_hz) {
+    // Configure SI pin (data output)
+    pio_gpio_init(pio, pin_si);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_si, 1, true);  // Output
+    
+    // Configure SC pin (clock output via sideset)
+    pio_gpio_init(pio, pin_sc);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_sc, 1, true);  // Output
+    
+    // Get default config
+    pio_sm_config c = gb_link_tx_program_get_default_config(offset);
+    
+    // Map OUT pin to SI
+    sm_config_set_out_pins(&c, pin_si, 1);
+    
+    // Map sideset pin to SC
+    sm_config_set_sideset_pins(&c, pin_sc);
+    
+    // Shift OSR to the left, autopull at 8 bits
+    sm_config_set_out_shift(&c, false, true, 8);  // MSB first, autopull, 8 bits
+    
+    // Calculate clock divider
+    // Each bit takes approximately 16 PIO cycles (8 low + 8 high)
+    // So we need: sys_clk / (freq_hz * 16) 
+    float div = (float)clock_get_hz(clk_sys) / (freq_hz * 16.0f);
+    sm_config_set_clkdiv(&c, div);
+    
+    // Initialize the state machine
+    pio_sm_init(pio, sm, offset, &c);
+    
+    // Set initial pin states: SC HIGH (idle), SI LOW
+    pio_sm_set_pins_with_mask(pio, sm, (1u << pin_sc), (1u << pin_si) | (1u << pin_sc));
+    
+    // Enable the state machine
+    pio_sm_set_enabled(pio, sm, true);
+}
+
+/**
+ * @brief Send a byte to Game Boy via PIO (non-blocking if FIFO has space)
+ * 
+ * @param pio PIO instance
+ * @param sm State machine index
+ * @param data Byte to send
+ * @return true if byte was queued, false if FIFO was full
+ */
+static inline bool gb_link_tx_try_put(PIO pio, uint sm, uint8_t data) {
+    if (pio_sm_is_tx_fifo_full(pio, sm)) {
+        return false;
+    }
+    pio_sm_put(pio, sm, (uint32_t)data);
+    return true;
+}
+
+/**
+ * @brief Send a byte to Game Boy via PIO (blocking)
+ * 
+ * @param pio PIO instance
+ * @param sm State machine index
+ * @param data Byte to send
+ */
+static inline void gb_link_tx_put_blocking(PIO pio, uint sm, uint8_t data) {
+    pio_sm_put_blocking(pio, sm, (uint32_t)data);
+}
+
+/**
+ * @brief Check if TX FIFO has space
+ * 
+ * @param pio PIO instance
+ * @param sm State machine index
+ * @return true if FIFO can accept more data
+ */
+static inline bool gb_link_tx_fifo_has_space(PIO pio, uint sm) {
+    return !pio_sm_is_tx_fifo_full(pio, sm);
+}
+
+%}

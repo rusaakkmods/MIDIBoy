@@ -1,0 +1,88 @@
+# =============================================================================
+# MIDIBoy - RP2040 Pico Project .gitignore
+# =============================================================================
+
+# Build directory (CMake/Ninja output)
+build/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Compiled outputs
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.uf2
+*.dis
+*.map
+*.a
+*.lib
+
+# PIO generated headers (regenerated from .pio files)
+*.pio.h
+
+# IDE and Editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json
+*.swp
+*.swo
+*~
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Keep tasks.json for build tasks
+!.vscode/tasks.json
+
+# Project documents (local reference only)
+.documents/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Debug files
+*.dmp
+*.stackdump
+core
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+
+# Python (if using any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+
+# Dependency directories (if any)
+node_modules/
+
+# OpenOCD/Debug session files
+*.cfg.bak
+
+# Picotool cache
+.picotool/
+
+# Generated documentation
+docs/_build/
+
+.documents
